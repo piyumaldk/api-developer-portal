@@ -3,7 +3,7 @@ name: Build and Prepare Release Assets
 on:
   push:
     tags:
-      - 'v*'  
+      - 'v*'  # Trigger on tag creation
 
 permissions:
   contents: write
@@ -33,34 +33,43 @@ jobs:
             curl -L -o $asset https://github.com/piyumaldk/api-developer-portal-core/releases/download/${{ env.latest_release_tag }}/$asset
           done
 
-      - name: Copy files based on asset names
+      - name: Prepare and Zip Files for Each Asset
         run: |
-          # Create a temporary directory for copied files
-          mkdir -p temp_copy_dir
+          # Create a temporary directory for the zips
+          mkdir -p temp_zips
 
+          # Loop through each asset and package it with required files
           for asset in ${{ env.assets }}; do
-            echo "Processing asset: $asset"
-
-            # Copy required files and directories
-            cp -r artifacts temp_copy_dir/
-            cp -r src temp_copy_dir/
-            cp config.js temp_copy_dir/
-            cp README.md temp_copy_dir/
-
-            # Copy the appropriate script files based on asset name
-            if [[ "$asset" == *linux* || "$asset" == *macos* ]]; then
-              cp *.sh temp_copy_dir/
-            elif [[ "$asset" == *win* ]]; then
-              cp *.bat temp_copy_dir/
+            # Skip if the asset is a source code tar.gz or zip
+            if [[ "$asset" == *source* ]]; then
+              continue
             fi
 
-            # Ensure the files are in the temporary directory
-            echo "Copied files to temp_copy_dir: $(ls -R temp_copy_dir)"
+            echo "Processing asset: $asset"
 
-            # No zipping, just copy the files as is
+            # Create a temporary directory for each zip content
+            mkdir -p temp_copy_dir
+
+            # Copy required files and directories
+            cp -r src temp_copy_dir/
+            cp -r artifacts temp_copy_dir/
+            cp config.js temp_copy_dir/
+            cp README.md temp_copy_dir/
+            cp "$asset" temp_copy_dir/  # Add the specific asset file
+
+            # Create a zip file with the asset name
+            zip_name="temp_zips/$asset.zip"
+            echo "Creating zip file: $zip_name"
+            zip -r "$zip_name" temp_copy_dir/*
+
+            # Clean up the temporary directory for the next asset
+            rm -rf temp_copy_dir
           done
 
-      - name: Create or Update GitHub Release with new assets
+      - name: List Created Zip Files
+        run: ls -R temp_zips
+
+      - name: Upload Zips to GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.latest_release_tag }}
@@ -68,5 +77,5 @@ jobs:
           body: "Automated release with custom assets including necessary scripts and files."
           draft: false
           prerelease: false
-          artifacts: ./temp_copy_dir/*  # Directly upload the files from temp_copy_dir
+          artifacts: "./temp_zips/*"  # Upload all zips in the temp_zips folder
           allowUpdates: true
