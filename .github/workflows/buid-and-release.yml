@@ -35,35 +35,27 @@ jobs:
 
       - name: Prepare and Zip Files for Each Asset
         run: |
-          # Create a temporary directory for the zips
-          mkdir -p temp_zips
+          mkdir -p temp_zips  # Create a directory for zip files
 
-          # Loop through each asset and package it with required files
           for asset in ${{ env.assets }}; do
-            # Skip if the asset is a source code tar.gz or zip
             if [[ "$asset" == *source* ]]; then
               continue
             fi
 
             echo "Processing asset: $asset"
+            mkdir -p temp_copy_dir  # Create temp directory for asset
 
-            # Create a temporary directory for each zip content
-            mkdir -p temp_copy_dir
-
-            # Copy required files and directories
+            # Copy necessary files and directories
             cp -r src temp_copy_dir/
             cp -r artifacts temp_copy_dir/
             cp config.js temp_copy_dir/
             cp README.md temp_copy_dir/
-            cp "$asset" temp_copy_dir/  # Add the specific asset file
+            cp "$asset" temp_copy_dir/  # Add asset file
 
-            # Create a zip file with the asset name
+            # Create zip file named after the asset
             zip_name="temp_zips/$asset.zip"
-            echo "Creating zip file: $zip_name"
             zip -r "$zip_name" temp_copy_dir/*
-
-            # Clean up the temporary directory for the next asset
-            rm -rf temp_copy_dir
+            rm -rf temp_copy_dir  # Clean up for the next asset
           done
 
       - name: List Created Zip Files
@@ -72,10 +64,10 @@ jobs:
       - name: Upload Zips to GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ env.latest_release_tag }}
-          name: WSO2 API Developer Portal Core ${{ env.latest_release_tag }}
+          tag: ${{ github.ref_name }}  # Use the tag that triggered the workflow
+          name: WSO2 API Developer Portal Core ${{ github.ref_name }}
           body: "Automated release with custom assets including necessary scripts and files."
           draft: false
           prerelease: false
-          artifacts: "./temp_zips/*"  # Upload all zips in the temp_zips folder
+          artifacts: "./temp_zips/*"  # Upload all zips
           allowUpdates: true
