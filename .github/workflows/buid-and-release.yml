@@ -3,7 +3,7 @@ name: Build and Prepare Release Assets
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*' 
 
 permissions:
   contents: write
@@ -43,19 +43,20 @@ jobs:
             fi
 
             echo "Processing asset: $asset"
-            mkdir -p temp_copy_dir  # Create temp directory for asset
+            mkdir -p developer-portal  # Use 'developer-portal' as the temp directory name
 
             # Copy necessary files and directories
-            cp -r src temp_copy_dir/
-            cp -r artifacts temp_copy_dir/
-            cp config.js temp_copy_dir/
-            cp README.md temp_copy_dir/
-            cp "$asset" temp_copy_dir/  # Add asset file
+            cp -r src developer-portal/
+            cp -r mock developer-portal/
+            cp -r artifacts developer-portal/
+            cp config.js developer-portal/
+            cp README.md developer-portal/
+            cp "$asset" developer-portal/  # Add asset file
 
             # Create zip file named after the asset
             zip_name="temp_zips/$asset.zip"
-            zip -r "$zip_name" temp_copy_dir/*
-            rm -rf temp_copy_dir  # Clean up for the next asset
+            zip -r "$zip_name" developer-portal/*
+            rm -rf developer-portal  # Clean up for the next asset
           done
 
       - name: List Created Zip Files
@@ -65,9 +66,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}  
-          name: WSO2 API Developer Portal ${{ github.ref_name }}
+          name: WSO2 API Developer Portal Core ${{ github.ref_name }}
           body: "Automated release with custom assets including necessary scripts and files."
           draft: false
           prerelease: false
-          artifacts: "./temp_zips/*"
+          artifacts: "./temp_zips/*"  
           allowUpdates: true
