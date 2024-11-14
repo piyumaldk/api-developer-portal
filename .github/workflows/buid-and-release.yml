@@ -3,7 +3,7 @@ name: Build and Prepare Release Assets
 on:
   push:
     tags:
-      - 'v*'  # Trigger on tag creation
+      - 'v*'
 
 permissions:
   contents: write
@@ -64,10 +64,10 @@ jobs:
       - name: Upload Zips to GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}  # Use the tag that triggered the workflow
-          name: WSO2 API Developer Portal Core ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}  
+          name: WSO2 API Developer Portal ${{ github.ref_name }}
           body: "Automated release with custom assets including necessary scripts and files."
           draft: false
           prerelease: false
-          artifacts: "./temp_zips/*"  # Upload all zips
+          artifacts: "./temp_zips/*"
           allowUpdates: true
